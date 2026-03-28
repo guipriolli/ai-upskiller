@@ -20,4 +20,4 @@ Follow these steps to execute the task:
    - To retrieve the code changes, run `git diff -U5 --staged` for staged changes. If a remote exists (`git remote` is non-empty), also run `git diff -U5 --merge-base origin/HEAD` to see the full diff against the remote base. If both are empty, stop and inform the user there is nothing to commit.
 3. **Draft Message**: Review the changes and prepare a concise, objective commit message.
 4. **Commit**: Run `git commit -m "<message>"` with the created message.
-5. **Push**: Run `git push`. If the branch has no upstream branch, use `git push -u origin HEAD`.
+5. **Push**: Run `git push -u origin HEAD`. This works regardless of whether the branch already has an upstream set.
