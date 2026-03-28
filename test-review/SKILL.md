@@ -7,7 +7,29 @@ You are running the `test-review` skill. The user has provided one or more sourc
 
 **Arguments:** `$ARGUMENTS`
 
-Parse `$ARGUMENTS` as a space-separated list of file paths. Process each file **sequentially** through steps 3–6 before moving to the next. Show a combined coverage report at the end (step 7).
+Parse `$ARGUMENTS` as a space-separated list of file paths.
+
+- **Single file:** execute steps 1–6 directly in this conversation, then produce the report
+  (step 7).
+- **Multiple files:** spawn one subagent per file **in parallel** using the Agent tool
+  (`subagent_type=general-purpose`). Send all agent calls in a single message. Each agent
+  receives a copy of these instructions and a single file path as its argument; it executes
+  steps 1–6 (including 6a, 6b, and 6c) independently. Wait for all agents to finish, collect
+  their outputs, then produce the combined report (step 7) in this conversation.
+
+---
+
+## Spawning subagents (multi-file mode only)
+
+Prompt each subagent with:
+
+1. The full text of this skill (steps 1–6).
+2. A single-file argument: the path assigned to that agent.
+3. The instruction: "Return your results as a structured block using the Step 7 report format.
+   Do not produce a combined report — only report on your assigned file."
+
+Do NOT ask subagents to run step 7 or produce a combined report; that is done by the
+orchestrating conversation after all agents have returned.
 
 ---
 
@@ -109,22 +131,47 @@ If a line is genuinely unreachable (e.g., a defensive null check that the framew
 
 ---
 
-## Step 6 — Review and strengthen assertions
+## Step 6 — Review and improve existing tests
 
-Go through every test in the file — both old and newly written. For each assertion, check for these weak patterns and fix them:
+Go through every test in the file — both old and newly written — and apply the three checks below.
+
+### 6a — Test naming and structure
+
+| Problem | Fix |
+|---|---|
+| Generic name (`test1`, `testMethod`, `shouldWork`) | Rename to `given_<ctx>_when_<action>_then_<result>` or `should_<behavior>_when_<condition>` |
+| Name describes implementation (`callsRepositorySave`) | Rename to describe observable behaviour (`persistsOrderWhenValid`) |
+| No AAA separation (Arrange/Act/Assert not identifiable) | Add blank-line separation or `// Arrange / // Act / // Assert` comments |
+| Multiple unrelated behaviours in one test | Split into focused tests, one behaviour each |
+| Magic literals with no explanation (`assertEquals(42, result)`) | Extract to a named constant or add an inline comment |
+
+### 6b — Assertion quality
 
 | Weak pattern | Replacement |
 |---|---|
 | `assertNotNull(result)` with no further checks | Assert the actual value or specific fields |
-| `assertTrue(result != null)` | Use typed matchers / `assertNotNull` + value check |
+| `assertTrue(result != null)` | `assertNotNull(result)` + value check |
 | `assertEquals(true, someCondition)` | `assertTrue(someCondition)` |
+| `assertEquals(false, someCondition)` | `assertFalse(someCondition)` |
 | Mock verified with `verify()` but return value never checked | Also assert the return value |
+| `assertThat(list).isNotEmpty()` with no content check | Assert size or specific elements |
 | Angular: `expect(component).toBeTruthy()` as the only assertion | Assert specific properties or output values |
 | `expect(result).toBeDefined()` with no further checks | Assert the actual value |
 | `expect(spy).toHaveBeenCalled()` with no argument check | Use `toHaveBeenCalledWith(...)` |
+| `expect(result).toEqual({})` (empty object) | Assert the specific fields expected |
+| Exception test only checks type (`assertThrows(FooException.class, ...)`) | Also assert the exception message or cause |
+
+**Java bonus:** if JUnit 5 is used, prefer `assertAll(...)` for grouping multiple field checks on the same object so all failures are shown at once.
+
+### 6c — Test isolation
+
+- Static mutable fields mutated in one test and read in another → move initialisation to `@BeforeEach` / `beforeEach`
+- Tests that rely on execution order (pass only when run after another test) → make each test self-contained
+- Missing `@AfterEach` / `afterEach` cleanup for resources opened in the test body (files, streams, DB connections) → add teardown
+- Angular: `TestBed` not reset between tests when component has side-effectful `ngOnInit` → add `TestBed.resetTestingModule()` or restructure
 
 Rules:
-- Do NOT remove any test — only strengthen assertions.
+- Do NOT remove any test — only strengthen or split them.
 - Each assertion must be specific enough that if the business logic changed subtly, the test would fail.
 
 ---

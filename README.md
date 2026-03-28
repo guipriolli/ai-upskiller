@@ -56,5 +56,5 @@ To use a skill in Claude Code, type `/skill-name` in the conversation.
 
 ## Resources
 
-- [Claude Code documentation](https://github.com/anthropics/claude-code)
-- [Claude Code issues](https://github.com/anthropics/claude-code/issues)
+- [Claude Code documentation](https://code.claude.com/docs/en/overview)
+- [Claude Code Github](https://github.com/anthropics/claude-code)
