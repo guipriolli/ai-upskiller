@@ -33,7 +33,7 @@ The `name` field determines the slash command (`/skill-name`). The `description`
 
 1. Create a new directory: `<skill-name>/SKILL.md`
 2. Add the frontmatter (`name`, `description`) and the prompt body
-3. Run `bash install.sh` to symlink it (or it auto-symlinks if already linked)
+3. Run `bash install.sh` to symlink it
 4. Update `README.md` to add the skill to the table
 
 ## Skill authoring conventions

@@ -21,13 +21,18 @@ Parse `$ARGUMENTS` as a space-separated list of file paths.
 
 ## Spawning subagents (multi-file mode only)
 
+Before spawning agents, resolve `$ARGUMENTS` into a concrete list of file paths. Each subagent
+receives a **literal file path string**, never the `$ARGUMENTS` token.
+
 Prompt each subagent with:
 
 1. The full text of this skill (steps 1–6).
-2. A single-file argument: the path assigned to that agent.
-3. The instruction: "Return your results as a structured block using the Step 7 report format.
+2. The resolved file path for that agent, hardcoded as a string (e.g., `src/main/java/Foo.java`).
+3. The instruction: "Your argument is `<resolved-path>`. Execute steps 1–6 for this file only.
+   Return your results as a structured block using the Step 7 report format.
    Do not produce a combined report — only report on your assigned file."
 
+Do NOT pass `$ARGUMENTS` to subagents — it will not be substituted inside the subagent prompt.
 Do NOT ask subagents to run step 7 or produce a combined report; that is done by the
 orchestrating conversation after all agents have returned.
 
@@ -65,6 +70,9 @@ If the extension is unrecognised, stop immediately and report:
 mvn test -Dtest=<TestClassName>
 ```
 If no test class exists yet, run `mvn test` to compile and confirm there are no build errors.
+
+> Multi-module projects: run from the module root, or add `-pl <module-path>` to target the
+> correct module (e.g., `mvn test -pl services/order -Dtest=OrderServiceTest`).
 
 Parse output for:
 - `BUILD FAILURE` → compilation or runtime error
@@ -111,6 +119,11 @@ mvn test jacoco:report
 Read `target/site/jacoco/index.html` or the console summary for uncovered lines and missed branches.
 
 **Angular — measure coverage:**
+
+> Prerequisite: `@vitest/coverage-v8` (or `@vitest/coverage-istanbul`) must be installed.
+> If coverage fails with a missing provider error, tell the user:
+> `"Run: npm install --save-dev @vitest/coverage-v8"`
+
 ```
 npx vitest run --coverage
 ```
@@ -118,7 +131,9 @@ Read the coverage summary printed to stdout (statements, branches, functions, li
 
 For every uncovered branch, method, statement, or line:
 
-- Write a focused test case with a descriptive name following `given_<context>_when_<action>_then_<result>` or `should_<behavior>_when_<condition>`.
+- Write a focused test case with a descriptive name:
+  - **Java:** use `given_<context>_when_<action>_then_<result>` (e.g., `given_emptyCart_when_checkout_then_throwsException`)
+  - **Angular:** use `should_<behavior>_when_<condition>` (e.g., `should_showError_when_formIsInvalid`)
 - Cover all of: happy path (if missing), null/undefined/empty inputs, boundary values, exception/error paths.
 - Prefer one assertion per concept.
 - Use `given/when/then` or `arrange/act/assert` structure inside the test body.
@@ -139,7 +154,7 @@ Go through every test in the file — both old and newly written — and apply t
 
 | Problem | Fix |
 |---|---|
-| Generic name (`test1`, `testMethod`, `shouldWork`) | Rename to `given_<ctx>_when_<action>_then_<result>` or `should_<behavior>_when_<condition>` |
+| Generic name (`test1`, `testMethod`, `shouldWork`) | Rename: Java → `given_<ctx>_when_<action>_then_<result>`; Angular → `should_<behavior>_when_<condition>` |
 | Name describes implementation (`callsRepositorySave`) | Rename to describe observable behaviour (`persistsOrderWhenValid`) |
 | No AAA separation (Arrange/Act/Assert not identifiable) | Add blank-line separation or `// Arrange / // Act / // Assert` comments |
 | Multiple unrelated behaviours in one test | Split into focused tests, one behaviour each |
@@ -190,21 +205,23 @@ mvn test jacoco:report
 npx vitest run --coverage
 ```
 
-Then report to the user using this format:
+Then report to the user using this format (output as rendered Markdown, not inside a code block):
 
-```
+---
+
 ## Test Review Summary
 
-### <FileName>
-- Tests before: <N>
-- Tests after:  <N> (+<added>)
-- Coverage:     <X>% (statements) / <Y>% (branches)
-- Suppressed lines: <list with reasons, or "none">
+### \<FileName\>
+- Tests before: \<N\>
+- Tests after:  \<N\> (+\<added\>)
+- Coverage:     \<X\>% (statements) / \<Y\>% (branches)
+- Suppressed lines: \<list with reasons, or "none"\>
 
 ### Overall
-- Total tests before: <N>
-- Total tests after:  <N>
+- Total tests before: \<N\>
+- Total tests after:  \<N\>
 - All tests passing:  ✓ / ✗
-```
+
+---
 
 If any test is still failing after all fixes, list it explicitly and explain what manual intervention is needed.
