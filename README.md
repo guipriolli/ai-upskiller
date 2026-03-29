@@ -53,6 +53,9 @@ bash scripts/install.sh
 This symlinks each skill directory from `skills/` into `~/.claude/skills/`. Because they're symlinks, any edits to
 skill files take effect immediately — you don't need to re-run the script.
 
+It also installs the `bwclaude` launcher to `~/.local/bin/bwclaude` (a symlink to
+`scripts/bubblewrap_claude.sh`), so you can run `bwclaude` from anywhere on your `$PATH`.
+
 To install skills from a published GitHub repo, use:
 
 ```bash
@@ -75,20 +78,18 @@ reducing the blast radius of unintended or runaway file operations.
 
 - Mounts system paths (`/usr`, `/lib`, `/bin`, `/etc/...`) as **read-only**
 - Grants **write access** only to: `$PWD`, `~/.claude`, `~/.claude.json`, `~/.npm`, `~/.m2`, `~/.agents`
-- Forwards SSH agent, D-Bus, GNOME Keyring, GPG, and GitHub CLI config so normal auth flows still work
+- Binds `$REPO_ROOT/skills` read-only so skill symlink targets resolve correctly inside the sandbox
+- Forwards SSH agent, D-Bus, GNOME Keyring, and GPG so normal auth flows still work
+- Forwards GitHub CLI config (`~/.config/gh`) read-only so `gh` commands work inside the sandbox
 - Shares the network but isolates the PID namespace (`--unshare-pid`)
 - Dies with the parent process (`--die-with-parent`)
 
 **Usage:**
 
 ```bash
-bash scripts/bubblewrap_claude.sh -c claude
-```
-
-Any arguments after the script name are passed to `bash`, so you can also wrap other commands:
-
-```bash
-bash scripts/bubblewrap_claude.sh -c "npm install && npm test"
+bwclaude                              # launch claude (after install.sh)
+bwclaude --resume <uuid>              # resume a claude session
+bash scripts/bubblewrap_claude.sh -c "<cmd>"  # run arbitrary command
 ```
 
 **Requirements:** `bwrap` must be installed (`apt install bubblewrap` on Debian/Ubuntu).
