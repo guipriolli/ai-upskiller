@@ -29,7 +29,7 @@ The table below lists all available skills and their purpose.
 | Skill | Description |
 |-------|-------------|
 | [docs-writer](./docs-writer/SKILL.md) | Specialised technical writer for creating, reviewing, or editing `.md` documentation files. |
-| [git-commit](./git-commit/SKILL.md) | Reviews code changes, prepares a commit message, and pushes to GitHub. |
+| [git-commit](./git-commit/SKILL.md) | Reviews code changes, updates README if needed, prepares a commit message, and pushes to GitHub. |
 | [improve-codebase-architecture](./improve-codebase-architecture/SKILL.md) | Explores a codebase to find architectural improvement opportunities, focusing on deepening shallow modules for better testability and AI-navigability. |
 | [test-review](./test-review/SKILL.md) | Full TDD review loop: reads source files, runs existing tests, fixes failures, writes missing tests to reach 100% coverage, and strengthens weak assertions. Supports Java/Maven and Angular/Vitest 4. |
 
