@@ -116,7 +116,12 @@ Do NOT delete failing tests. Fix them.
 ```
 mvn test jacoco:report
 ```
-Read `target/site/jacoco/index.html` or the console summary for uncovered lines and missed branches.
+Then parse the XML report to read uncovered lines and missed branches:
+```
+python3 ~/.claude/skills/test-review/scripts/jacoco-coverage-by-class.py <ClassName>
+```
+Substitute `<ClassName>` with the simple class name of the file under review (e.g., `OrderService`).
+The script accepts multiple names if reviewing more than one class.
 
 **Angular — measure coverage:**
 
@@ -199,6 +204,11 @@ Run the full test suite with coverage one last time:
 ```
 mvn test jacoco:report
 ```
+Then read coverage numbers:
+```
+python3 ~/.claude/skills/test-review/scripts/jacoco-coverage-summary.py
+```
+Use `INSTRUCTION` as "statements %" and `BRANCH` as "branches %" in the report below.
 
 **Angular:**
 ```
