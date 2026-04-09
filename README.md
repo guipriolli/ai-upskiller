@@ -39,6 +39,7 @@ The prompt instructions go here...
 
 | Skill | Description |
 |-------|-------------|
+| [code-reviewer](./skills/code-reviewer/SKILL.md) | Automates local code review by analyzing uncommitted changes, identifying issues, proposing fixes, and delegating their implementation to sub-agents. |
 | [docs-writer](./skills/docs-writer/SKILL.md) | Specialised technical writer for creating, reviewing, or editing `.md` documentation files. |
 | [git-commit](./git-commit/SKILL.md) | Reviews code changes, updates README if needed, prepares a commit message, and pushes to GitHub. |
 | [improve-codebase-architecture](./skills/improve-codebase-architecture/SKILL.md) | Explores a codebase to find architectural improvement opportunities, focusing on deepening shallow modules for better testability and AI-navigability. |
@@ -50,34 +51,26 @@ The prompt instructions go here...
 bash scripts/install.sh
 ```
 
-This symlinks each skill directory from `skills/` into `~/.claude/skills/`. Because they're symlinks, any edits to
-skill files take effect immediately — you don't need to re-run the script.
+This symlinks each skill directory from `skills/` into `~/.claude/skills/` and `~/.gemini/skills/`.
+Because they're symlinks, any edits to skill files take effect immediately — you don't need to
+re-run the script.
 
-It also installs the `bwclaude` launcher to `~/.local/bin/bwclaude` (a symlink to
-`scripts/bubblewrap_claude.sh`), so you can run `bwclaude` from anywhere on your `$PATH`.
-
-To install skills from a published GitHub repo, use:
-
-```bash
-npx skills install <github-repo>
-```
-
-## Usage
-
-To use a skill in Claude Code, type `/skill-name` in the conversation.
+It also installs the `bwclaude` and `bwgemini` launchers to `~/.local/bin/` (symlinks to
+`scripts/bubblewrap_*.sh`), so you can run them from anywhere on your `$PATH`.
 
 ## Scripts
 
-### `scripts/bubblewrap_claude.sh`
+### `scripts/bubblewrap_*.sh`
 
-Runs Claude Code (or any command) inside a [bubblewrap](https://github.com/containers/bubblewrap) sandbox.
-The sandbox restricts filesystem access so that Claude can only write to an explicit allowlist of directories,
-reducing the blast radius of unintended or runaway file operations.
+Runs AI assistants (Claude Code, Gemini CLI) or any command inside a
+[bubblewrap](https://github.com/containers/bubblewrap) sandbox. The sandbox restricts filesystem
+access so that the assistant can only write to an explicit allowlist of directories, reducing the
+blast radius of unintended or runaway file operations.
 
-**What it does:**
+**What they do:**
 
 - Mounts system paths (`/usr`, `/lib`, `/bin`, `/etc/...`) as **read-only**
-- Grants **write access** only to: `$PWD`, `~/.claude`, `~/.claude.json`, `~/.npm`, `~/.m2`, `~/.agents`
+- Grants **write access** only to: `$PWD`, `~/.claude`, `~/.gemini`, `~/.npm`, `~/.m2`, `~/.agents`
 - Binds `$REPO_ROOT/skills` read-only so skill symlink targets resolve correctly inside the sandbox
 - Forwards SSH agent, D-Bus, GNOME Keyring, and GPG so normal auth flows still work
 - Forwards GitHub CLI config (`~/.config/gh`) read-only so `gh` commands work inside the sandbox
@@ -88,6 +81,7 @@ reducing the blast radius of unintended or runaway file operations.
 
 ```bash
 bwclaude                              # launch claude (after install.sh)
+bwgemini                              # launch gemini (after install.sh)
 bwclaude --resume <uuid>              # resume a claude session
 bash scripts/bubblewrap_claude.sh -c "<cmd>"  # run arbitrary command
 ```
