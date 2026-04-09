@@ -1,0 +1,17 @@
+{
+  "security": {
+    "auth": {
+      "selectedType": "oauth-personal"
+    }
+  },
+  "general": {
+    "defaultApprovalMode": "auto_edit",
+    "enableNotifications": true,
+    "checkpointing": {
+      "enabled": true
+    }
+  },
+  "billing": {
+    "overageStrategy": "never"
+  }
+}

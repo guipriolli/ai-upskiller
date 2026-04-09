@@ -1,0 +1,45 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(**)",
+      "Edit(**)",
+      "Write(**)",
+      "Bash(mvn*)",
+      "Bash(java*)",
+      "Bash(npm*)",
+      "Bash(ng*)",
+      "Bash(git status*)",
+      "Bash(git log*)",
+      "Bash(git diff*)",
+      "Bash(git show*)",
+      "Bash(git checkout:*)",
+      "Bash(find*)",
+      "Bash(grep*)",
+      "Bash(ls*)",
+      "Bash(cat*)",
+      "Bash(head*)",
+      "Bash(tail*)",
+      "Bash(echo*)",
+      "Bash(pwd*)",
+      "Bash(which*)"
+    ],
+    "deny": [
+      "Bash(chmod*)",
+      "Bash(chown*)",
+      "Bash(sudo*)",
+      "Bash(ssh*)",
+      "Bash(scp*)"
+    ],
+    "ask": [
+      "Bash(rm*)",
+      "Bash(mv *)",
+      "Bash(curl*)",
+      "Bash(wget*)",
+      "Bash(rmdir*)",
+      "Bash(git push*)",
+      "Bash(git reset*)",
+      "Bash(git clean*)",
+      "Bash(git branch -D*)"
+    ]
+  }
+}

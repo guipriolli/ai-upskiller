@@ -1,0 +1,217 @@
+# --- ALLOWED (Execute without confirmation) ---
+
+[[rule]]
+toolName = "read_file"
+decision = "allow"
+priority = 100
+
+[[rule]]
+toolName = "replace"
+decision = "allow"
+priority = 100
+
+[[rule]]
+toolName = "write_file"
+decision = "allow"
+priority = 100
+
+[[rule]]
+toolName = "run_shell_command"
+commandPrefix = "mvn"
+decision = "allow"
+priority = 100
+
+[[rule]]
+toolName = "run_shell_command"
+commandPrefix = "java"
+decision = "allow"
+priority = 100
+
+[[rule]]
+toolName = "run_shell_command"
+commandPrefix = "npm"
+decision = "allow"
+priority = 100
+
+[[rule]]
+toolName = "run_shell_command"
+commandPrefix = "ng"
+decision = "allow"
+priority = 100
+
+[[rule]]
+toolName = "run_shell_command"
+commandPrefix = "git status"
+decision = "allow"
+priority = 100
+
+[[rule]]
+toolName = "run_shell_command"
+commandPrefix = "git log"
+decision = "allow"
+priority = 100
+
+[[rule]]
+toolName = "run_shell_command"
+commandPrefix = "git diff"
+decision = "allow"
+priority = 100
+
+[[rule]]
+toolName = "run_shell_command"
+commandPrefix = "git show"
+decision = "allow"
+priority = 100
+
+[[rule]]
+toolName = "run_shell_command"
+commandPrefix = "git checkout:"
+decision = "allow"
+priority = 100
+
+[[rule]]
+toolName = "run_shell_command"
+commandPrefix = "find"
+decision = "allow"
+priority = 100
+
+[[rule]]
+toolName = "run_shell_command"
+commandPrefix = "grep"
+decision = "allow"
+priority = 100
+
+[[rule]]
+toolName = "run_shell_command"
+commandPrefix = "ls"
+decision = "allow"
+priority = 100
+
+[[rule]]
+toolName = "run_shell_command"
+commandPrefix = "cat"
+decision = "allow"
+priority = 100
+
+[[rule]]
+toolName = "run_shell_command"
+commandPrefix = "head"
+decision = "allow"
+priority = 100
+
+[[rule]]
+toolName = "run_shell_command"
+commandPrefix = "tail"
+decision = "allow"
+priority = 100
+
+[[rule]]
+toolName = "run_shell_command"
+commandPrefix = "echo"
+decision = "allow"
+priority = 100
+
+[[rule]]
+toolName = "run_shell_command"
+commandPrefix = "pwd"
+decision = "allow"
+priority = 100
+
+[[rule]]
+toolName = "run_shell_command"
+commandPrefix = "which"
+decision = "allow"
+priority = 100
+
+# --- DENIED (Strictly prohibited) ---
+
+[[rule]]
+toolName = "run_shell_command"
+commandPrefix = "chmod"
+decision = "deny"
+deny_message = "Changing file permissions is prohibited by policy."
+priority = 200
+
+[[rule]]
+toolName = "run_shell_command"
+commandPrefix = "chown"
+decision = "deny"
+deny_message = "Changing file ownership is prohibited by policy."
+priority = 200
+
+[[rule]]
+toolName = "run_shell_command"
+commandPrefix = "sudo"
+decision = "deny"
+deny_message = "Elevation of privileges (sudo) is strictly prohibited."
+priority = 200
+
+[[rule]]
+toolName = "run_shell_command"
+commandPrefix = "ssh"
+decision = "deny"
+deny_message = "SSH connections are prohibited."
+priority = 200
+
+[[rule]]
+toolName = "run_shell_command"
+commandPrefix = "scp"
+decision = "deny"
+deny_message = "SCP file transfers are prohibited."
+priority = 200
+
+# --- ASK USER (Prompt for manual confirmation) ---
+
+[[rule]]
+toolName = "run_shell_command"
+commandPrefix = "rm"
+decision = "ask_user"
+priority = 150
+
+[[rule]]
+toolName = "run_shell_command"
+commandPrefix = "mv"
+decision = "ask_user"
+priority = 150
+
+[[rule]]
+toolName = "run_shell_command"
+commandPrefix = "curl"
+decision = "ask_user"
+priority = 150
+
+[[rule]]
+toolName = "run_shell_command"
+commandPrefix = "wget"
+decision = "ask_user"
+priority = 150
+
+[[rule]]
+toolName = "run_shell_command"
+commandPrefix = "rmdir"
+decision = "ask_user"
+priority = 150
+
+[[rule]]
+toolName = "run_shell_command"
+commandPrefix = "git push"
+decision = "ask_user"
+priority = 150
+
+[[rule]]
+toolName = "run_shell_command"
+commandPrefix = "git reset"
+decision = "ask_user"
+priority = 150
+
+[[rule]]
+toolName = "run_shell_command"
+commandPrefix = "git clean"
+decision = "ask_user"
+priority = 150
+
+[[rule]]
+toolName = "run_shell_command"
+commandPrefix = "git branch -D"
+decision = "ask_user"
+priority = 150
