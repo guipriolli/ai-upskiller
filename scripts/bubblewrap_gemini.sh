@@ -11,7 +11,18 @@
 
 # When invoked with no arguments, default to launching gemini.
 if [ $# -eq 0 ]; then
-  set -- -c "gemini"
+  CMD="${GEMINI_CMD:-}"
+  if [ -z "$CMD" ]; then
+    if command -v gemini >/dev/null 2>&1; then
+      CMD="gemini"
+    elif command -v gemini-cli >/dev/null 2>&1; then
+      CMD="gemini-cli"
+    else
+      echo "Error: gemini or gemini-cli not found in PATH." >&2
+      exit 1
+    fi
+  fi
+  set -- -c "$CMD"
 fi
 
 # Resolve the repo root relative to this script so skills symlink targets are accessible
