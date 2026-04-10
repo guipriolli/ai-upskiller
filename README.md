@@ -58,6 +58,16 @@ re-run the script.
 It also installs the `bwclaude` and `bwgemini` launchers to `~/.local/bin/` (symlinks to
 `scripts/bubblewrap_*.sh`), so you can run them from anywhere on your `$PATH`.
 
+### Uninstallation
+
+```bash
+bash scripts/uninstall.sh <skill-name|bwclaude|bwgemini>
+```
+
+This removes the symlinks for a specific skill or launcher. For example:
+- `bash scripts/uninstall.sh code-reviewer`
+- `bash scripts/uninstall.sh bwclaude`
+
 ## Scripts
 
 ### `scripts/bubblewrap_*.sh`

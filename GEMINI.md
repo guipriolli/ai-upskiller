@@ -26,10 +26,15 @@ This file provides foundational context and instructions for Gemini CLI when wor
 
 ## Common Workflows
 
-### Installing Skills
+### Installing or Removing Skills
 To install or refresh the skill symlinks in your local environment:
 ```bash
 bash scripts/install.sh
+```
+
+To remove a specific skill or launcher:
+```bash
+bash scripts/uninstall.sh <name>
 ```
 
 ### Adding a New Skill
