@@ -43,6 +43,8 @@ The prompt instructions go here...
 | [docs-writer](./skills/docs-writer/SKILL.md) | Specialised technical writer for creating, reviewing, or editing `.md` documentation files. |
 | [git-commit](./skills/git-commit/SKILL.md) | Reviews code changes, updates README if needed, prepares a commit message, and pushes to GitHub. |
 | [improve-codebase-architecture](./skills/improve-codebase-architecture/SKILL.md) | Explores a codebase to find architectural improvement opportunities, focusing on deepening shallow modules for better testability and AI-navigability. |
+| [refactoring-advisor](./skills/refactoring-advisor/SKILL.md) | Analyzes code for method/class-level code smells and proposes concrete refactoring techniques from Martin Fowler's catalog, with interactive apply-and-verify workflow. |
+| [spec](./skills/spec/SKILL.md) | Spec-driven development: plan features, design architecture, break down tasks, execute with context persistence across sessions via lightweight `.specs/` directory. |
 | [test-review](./skills/test-review/SKILL.md) | Full TDD review loop: reads source files, runs existing tests, fixes failures, writes missing tests to reach 100% coverage, and strengthens weak assertions. Supports Java/Maven and Angular/Vitest 4. |
 
 ### Installation

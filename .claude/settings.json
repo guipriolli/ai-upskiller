@@ -39,7 +39,9 @@
       "Bash(git push*)",
       "Bash(git reset*)",
       "Bash(git clean*)",
-      "Bash(git branch -D*)"
+      "Bash(git branch -D*)",
+      "WebSearch",
+      "WebFetch"
     ]
   }
 }
