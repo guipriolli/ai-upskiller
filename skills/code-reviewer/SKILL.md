@@ -1,56 +1,71 @@
 ---
 name: code-reviewer
-description: Automates the local code review process. Analyzes uncommitted changes, identifies issues, proposes categorised fixes, interactively gathers user approval, delegates fixes to a generic subagent, and verifies final state through compilation and testing.
+description: Automates local code review of uncommitted changes. Analyzes diffs, identifies issues, proposes categorized fixes, gathers user approval, delegates fixes to subagents, and verifies the final state through compilation and testing.
+disable-model-invocation: true
 ---
 
-# `code-reviewer` Skill Instructions
+# Code reviewer
 
-You are the `code-reviewer` expert. Your goal is to guide the user through a comprehensive local code review of their uncommitted changes. Follow these steps strictly.
+You are the code-reviewer expert. Guide the user through a comprehensive local code review of their uncommitted changes. Follow these steps strictly. **Stop on any build or test failure — do not attempt auto-fixes.**
 
-## 1. Review Phase
+## 1. Gather changes
 
-1. **Analyze Changes:** Run `git diff HEAD` (and `git diff --staged` if needed) to identify all modified code. Additionally, check for untracked files using `git ls-files --others --exclude-standard` to ensure no newly created files are missed in the review.
-2. **Manage Large Diffs:** If the diff is exceptionally large, review the files systematically (e.g., sequentially or grouped by domain) rather than processing a monolithic diff all at once to avoid overwhelming the context window.
-3. **Secrets & Credentials Check (High Priority):** Scan the diff specifically for accidentally hardcoded API keys, passwords, local `.env` values, or other sensitive credentials before moving on to structural feedback.
-4. **Examine Criteria:** Analyze the diff for:
-   - **Correctness**: Implementation errors, bugs, or logic flaws. Does the code achieve its stated purpose?
-   - **Architecture**: Cross-module impact. Does the change introduce tight coupling or break existing architectural patterns? If a core interface changes, suggest using the `codebase_investigator` sub-agent to ensure dependent modules are updated.
-   - **Maintainability**: Code smells, poor practices, lack of modularity, or deviation from design patterns. Is the code clean, well-structured, and easy to understand/modify?
-   - **Readability**: Missing/inaccurate documentation and formatting issues. Is it consistently formatted according to project guidelines?
-   - **Efficiency**: Performance bottlenecks, resource inefficiencies, or unnecessary complexity.
-   - **Security**: Potential security vulnerabilities or insecure coding practices.
-   - **Documentation Synchronization**: Does the code change render existing documentation obsolete? Check if updates are needed for `README.md`, `REFERENCE.md`, or inline API documentation (like Javadoc/JSDoc) and flag discrepancies.
-   - **Edge Cases and Error Handling**: Poor error handling, logging, and failure to appropriately handle edge cases.
-   - **Testability**: Inadequate test coverage for new/modified code. Suggest additional test cases to improve coverage and robustness.
-   - **Conventions**: Deviation from project conventions or stated intent.
-5. **Enumerate Findings:** Output a clearly numbered list of identified issues.
+1. Run `git diff HEAD` and `git diff --staged` to collect all modified code.
+2. Run `git ls-files --others --exclude-standard` to capture untracked files.
+3. **Large diffs (>500 changed lines):** Process files one at a time or grouped by module. Do not load the entire diff into a single prompt.
+4. When a hunk lacks enough surrounding context to judge correctness, read the full file before forming an opinion.
 
-## 2. Propose Fixes
+## 2. Review
 
-For each issue in your enumerated list:
-- **Propose a Fix:** Describe the specific code change or refactoring required.
-- **Provide Rationale:** Explain *why* the fix is necessary.
-- **Categorize Severity:** Label the issue as either **Critical/Must-Fix** or **Nitpick**.
-- **State Trade-offs:** Mention any relevant trade-offs (e.g., performance vs. readability).
+Scan the changes against the criteria below, in priority order:
 
-## 3. User Authorization
+1. **Secrets and credentials** — Hardcoded API keys, passwords, `.env` values, or tokens. Flag immediately.
+2. **Correctness** — Bugs, logic flaws, or behavior that contradicts stated intent.
+3. **Security** — Injection vectors, insecure defaults, OWASP Top 10 violations.
+4. **Architecture** — Tight coupling, broken patterns, or cross-module impact. If a core interface changed, use an Explore subagent to verify that all dependent modules still compile.
+5. **Edge cases and error handling** — Missing guards, swallowed exceptions, inadequate logging.
+6. **Testability** — Insufficient test coverage for new or modified paths. Suggest specific test cases.
+7. **Efficiency** — Performance bottlenecks or unnecessary complexity.
+8. **Maintainability** — Code smells, poor modularity, or design-pattern violations.
+9. **Readability** — Formatting inconsistencies or missing/inaccurate inline documentation.
+10. **Documentation sync** — Changes that render `README.md`, API docs, or other reference material obsolete.
+11. **Conventions** — Deviations from project conventions or CLAUDE.md instructions.
 
-After presenting the proposed fixes, ask the user which issue numbers they want to apply.
-- Support options like: "Fix All Critical", specific numbers (e.g., "1, 3, 4"), or explicit rejections (e.g., "Ignore 2").
-- Wait for the user's explicit authorization before proceeding to implementation.
+Output a clearly **numbered list** of findings.
 
-## 4. Subagent Delegation
+## 3. Propose fixes
 
-Once the user approves specific fixes, you MUST NOT apply the changes directly. Instead, delegate the implementation:
-1. **Prepare Context:** For each approved issue, extract only the strictly relevant context: the affected file path, the specific issue description, and the proposed fix.
-2. **Delegate to Subagent:** Instruct the `generalist` subagent to implement the fix. Pass the prepared context to the subagent to preserve the main context window.
-3. **Parallel Execution:** If the user asks to fix multiple issues, spawn one `generalist` subagent for each issue and execute them in parallel. Note: If multiple subagents need to mutate the *exact same file*, you must coordinate them safely (e.g., sequentially) or combine the requests into a single subagent call to prevent race conditions.
+For each finding, provide:
 
-## 5. Verification
+| Field | Content |
+|---|---|
+| **Fix** | The specific code change or refactoring required |
+| **Rationale** | Why the fix matters |
+| **Severity** | `Critical` or `Nitpick` |
+| **Trade-offs** | Any relevant trade-offs (e.g., performance vs. readability) |
 
-After the subagents complete the fixes:
-1. **Compilation Check:** If the project requires compilation, execute the build command.
-2. **Run Tests:** Run the relevant unit tests to ensure nothing was broken. Verify that the modified lines are covered.
-3. **Verify Status:** Run `git status` to ensure only the intended files were modified.
+## 4. User authorization
 
-If any verification step fails, report the error and propose a plan to fix it.
+Present the proposed fixes and ask the user which to apply. Accept:
+- "Fix all critical"
+- Specific numbers (e.g., "1, 3, 4")
+- Explicit rejections (e.g., "Ignore 2")
+
+**Wait for explicit authorization before proceeding.** Do not implement anything until the user responds.
+
+## 5. Delegate fixes to subagents
+
+Do NOT apply changes directly. Delegate each approved fix to a subagent:
+
+1. **Prepare context:** For each approved fix, extract the affected file path, issue description, and proposed change.
+2. **Same-file rule:** If two or more approved fixes touch the same file, combine them into a single subagent call to prevent race conditions.
+3. **Spawn subagents:** Launch one `general-purpose` subagent per independent fix. Run them in parallel, up to a maximum of **5 concurrent** subagents. Queue remaining fixes in subsequent batches.
+
+## 6. Verify
+
+After all subagents complete:
+
+1. **Detect build tool:** Identify the project's build system (e.g., `mvn`, `npm`, `gradle`, `cargo`) from config files in the repository root.
+2. **Compile:** If the project requires compilation, run the build command. **Stop on failure** — report the error to the user and do not proceed.
+3. **Run tests:** Execute the project's test suite. Verify that modified lines have test coverage. **Stop on failure.**
+4. **Check git status:** Run `git status` to confirm only the intended files were modified. Flag any unexpected changes.
