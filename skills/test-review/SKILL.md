@@ -1,25 +1,29 @@
 ---
 name: test-review
-description: Full TDD review loop — reads source files, runs tests, fixes failures, writes missing tests to reach 100% coverage, and strengthens weak assertions. Supports Java/Maven and Angular/Vitest 4.
+description: Full TDD review loop — reads source files, runs tests, fixes failures, writes missing tests to reach 100% coverage, and strengthens weak assertions. Extensible via per-language reference files.
 ---
 
-You are running the `test-review` skill. The user has provided one or more source files as arguments. Your job is to execute a full TDD review loop for each file.
+You are running the `test-review` skill. Your job is to execute a full TDD review loop for each
+source file provided as an argument.
 
 **Arguments:** `$ARGUMENTS`
 
 Parse `$ARGUMENTS` as a space-separated list of file paths.
 
+If `$ARGUMENTS` is empty or blank, stop immediately and print:
+> "Usage: `/test-review <file1> [file2 ...]` — provide one or more source files."
+
 - **Single file:** execute steps 1–6 directly in this conversation, then produce the report
   (step 7).
 - **Multiple files:** spawn one subagent per file **in parallel** using the Agent tool
   (`subagent_type=general-purpose`). Send all agent calls in a single message. Each agent
-  receives a copy of these instructions and a single file path as its argument; it executes
-  steps 1–6 (including 6a, 6b, and 6c) independently. Wait for all agents to finish, collect
-  their outputs, then produce the combined report (step 7) in this conversation.
+  receives a copy of these instructions and a single file path; it executes steps 1–6
+  independently. Wait for all agents to finish, collect their outputs, then produce the combined
+  report (step 7) in this conversation.
 
 ---
 
-## Spawning subagents (multi-file mode only)
+## Spawn subagents (multi-file mode only)
 
 Before spawning agents, resolve `$ARGUMENTS` into a concrete list of file paths. Each subagent
 receives a **literal file path string**, never the `$ARGUMENTS` token.
@@ -28,70 +32,59 @@ Prompt each subagent with:
 
 1. The full text of this skill (steps 1–6).
 2. The resolved file path for that agent, hardcoded as a string (e.g., `src/main/java/Foo.java`).
-3. The instruction: "Your argument is `<resolved-path>`. Execute steps 1–6 for this file only.
-   Return your results as a structured block using the Step 7 report format.
+3. The working directory to use (the module root for multi-module Maven projects).
+4. The instruction: "Your argument is `<resolved-path>`. Execute steps 1–6 for this file only.
+   Return your results as a structured block using the step 7 report format.
    Do not produce a combined report — only report on your assigned file."
 
 Do NOT pass `$ARGUMENTS` to subagents — it will not be substituted inside the subagent prompt.
-Do NOT ask subagents to run step 7 or produce a combined report; that is done by the
-orchestrating conversation after all agents have returned.
+Do NOT ask subagents to run step 7 or produce a combined report; the orchestrating conversation
+does that after all agents return.
 
 ---
 
-## Step 1 — Read and understand source files
+## Step 1 — Read and understand the source file
 
-For each file in the argument list:
-
-- Read the file using the Read tool.
-- Identify: class/component name, all public methods/inputs/outputs, every business logic branch, and expected edge cases.
-- Locate the corresponding test file:
-  - **Java:** mirror the source path from `src/main/java/` to `src/test/java/`, look for `<ClassName>Test.java` or `<ClassName>Tests.java`.
-  - **Angular:** look for `<filename>.spec.ts` adjacent to the source file.
-- Read the test file if it exists. Note how many tests are already present.
+Read the source file using the Read tool. Identify: class/component name, all public
+methods/inputs/outputs, every business logic branch, and expected edge cases.
 
 ---
 
-## Step 2 — Auto-detect project type
+## Step 2 — Detect project type and load reference file
 
-Determine mode from the file extensions:
+Determine mode from the file extension:
 
 - `.java` → **Java/Maven** mode
 - `.ts` (including `.component.ts`, `.service.ts`) → **Angular/Vitest** mode
 
-If the extension is unrecognised, stop immediately and report:
+If the extension is unrecognised, stop immediately (skip steps 3–7) and report:
 > "Unsupported file type: `<extension>`. This skill supports `.java` and `.ts` files only."
+
+After detecting the project type, read the corresponding reference file:
+- Java/Maven → `reference/java-maven.md`
+- Angular/Vitest → `reference/angular-vitest.md`
+
+All subsequent steps use commands, conventions, and rules from this reference file.
+Locate the test file using the conventions in the reference file.
+
+If the reference file cannot be read, stop immediately and report:
+> "Could not load reference file for `<project-type>`. Ensure the reference files exist under
+> `skills/test-review/reference/`."
+
+Read the test file if it exists. Record how many tests are already present (this is the "tests
+before" count for step 7).
 
 ---
 
 ## Step 3 — Run existing tests
 
-**Java (Maven):**
-```
-mvn test -Dtest=<TestClassName>
-```
-If no test class exists yet, run `mvn test` to compile and confirm there are no build errors.
+Run the existing tests using the test runner commands from the reference file.
 
-> Multi-module projects: run from the module root, or add `-pl <module-path>` to target the
-> correct module (e.g., `mvn test -pl services/order -Dtest=OrderServiceTest`).
-
-Parse output for:
-- `BUILD FAILURE` → compilation or runtime error
-- `Tests run: N, Failures: F, Errors: E` → identify failing tests by name
-
-**Angular (Vitest 4):**
-```
-npx vitest run --reporter=verbose <path/to/spec-file.spec.ts>
-```
-If no spec file exists yet, run `npx vitest run` to confirm the project builds.
-
-Parse output for:
-- `FAIL` lines → failing test names and assertion errors
-- `PASS` lines → already passing tests
-
-**If a build/compilation error is detected → stop immediately.** Print the full error output and tell the user:
+**If a build/compilation error is detected → stop immediately.** Print the full error output and
+tell the user:
 > "Build failed — please fix the compilation error before proceeding. Here's the output: `<error>`"
 
-Do NOT attempt to auto-fix build or compilation errors.
+Do NOT attempt to auto-fix build or compilation errors. Skip steps 4–7.
 
 ---
 
@@ -101,10 +94,13 @@ For each failing test identified in step 3:
 
 1. Read the failure message carefully.
 2. Read the test code at the failing location.
-3. Trace the failure: is it a stale assertion, wrong mock setup, outdated expected value, or a real regression in the source?
+3. Trace the failure: is it a stale assertion, wrong mock setup, outdated expected value, or a
+   real regression in the source?
 4. Apply the minimal fix to make the test correct and green.
 5. Re-run only the affected test to confirm it passes before moving on.
-6. Repeat until all pre-existing tests are green.
+
+**Iteration cap:** attempt at most **3 fix cycles per test**. If a test still fails after 3
+attempts, leave it failing and report it in step 7 as requiring manual intervention.
 
 Do NOT delete failing tests. Fix them.
 
@@ -112,54 +108,48 @@ Do NOT delete failing tests. Fix them.
 
 ## Step 5 — Write new tests to reach 100% coverage
 
-**Java — measure coverage:**
-```
-mvn test jacoco:report
-```
-Then parse the XML report to read uncovered lines and missed branches:
-```
-python3 ~/.claude/skills/test-review/scripts/jacoco-coverage-by-class.py <ClassName>
-```
-Substitute `<ClassName>` with the simple class name of the file under review (e.g., `OrderService`).
-The script accepts multiple names if reviewing more than one class.
+### Measure current coverage
 
-**Angular — measure coverage:**
+Run the coverage commands from the reference file and parse the results.
 
-> Prerequisite: `@vitest/coverage-v8` (or `@vitest/coverage-istanbul`) must be installed.
-> If coverage fails with a missing provider error, tell the user:
-> `"Run: npm install --save-dev @vitest/coverage-v8"`
+### Write tests for uncovered code
 
-```
-npx vitest run --coverage
-```
-Read the coverage summary printed to stdout (statements, branches, functions, lines %).
+If no test file exists yet, create it at the path identified in step 2 with appropriate
+boilerplate (imports, test class/describe block).
 
 For every uncovered branch, method, statement, or line:
 
-- Write a focused test case with a descriptive name:
-  - **Java:** use `given_<context>_when_<action>_then_<result>` (e.g., `given_emptyCart_when_checkout_then_throwsException`)
-  - **Angular:** use `should_<behavior>_when_<condition>` (e.g., `should_showError_when_formIsInvalid`)
-- Cover all of: happy path (if missing), null/undefined/empty inputs, boundary values, exception/error paths.
+- Write a focused test case with a descriptive name using the naming convention from the
+  reference file.
+- Cover all of: happy path (if missing), null/undefined/empty inputs, boundary values,
+  exception/error paths.
 - Prefer one assertion per concept.
 - Use `given/when/then` or `arrange/act/assert` structure inside the test body.
 
-After writing each batch of tests, re-run coverage. Repeat until 100% is reached.
+### Iterate toward 100%
 
-If a line is genuinely unreachable (e.g., a defensive null check that the framework guarantees will never be null), add a suppression comment and explain why in the final report:
-- Java: `// jacoco:ignore` or configure exclusions in `pom.xml`
-- Angular: `/* v8 ignore next */` or `/* istanbul ignore next */`
+After writing each batch of tests, re-run coverage. **Repeat for at most 3 rounds.** If coverage
+has not reached 100% after 3 rounds, suppress the remaining uncoverable lines using the
+suppression syntax from the reference file and proceed to step 6.
+
+### Suppress genuinely unreachable lines
+
+If a line is genuinely unreachable (e.g., a defensive null check the framework guarantees will
+never fire), add a suppression comment using the syntax from the reference file and record the
+reason for step 7.
 
 ---
 
 ## Step 6 — Review and improve existing tests
 
-Go through every test in the file — both old and newly written — and apply the three checks below.
+Go through every test in the file — both old and newly written — and apply the three checks
+below.
 
 ### 6a — Test naming and structure
 
 | Problem | Fix |
 |---|---|
-| Generic name (`test1`, `testMethod`, `shouldWork`) | Rename: Java → `given_<ctx>_when_<action>_then_<result>`; Angular → `should_<behavior>_when_<condition>` |
+| Generic name (`test1`, `testMethod`, `shouldWork`) | Rename using the convention from the reference file |
 | Name describes implementation (`callsRepositorySave`) | Rename to describe observable behaviour (`persistsOrderWhenValid`) |
 | No AAA separation (Arrange/Act/Assert not identifiable) | Add blank-line separation or `// Arrange / // Act / // Assert` comments |
 | Multiple unrelated behaviours in one test | Split into focused tests, one behaviour each |
@@ -167,59 +157,30 @@ Go through every test in the file — both old and newly written — and apply t
 
 ### 6b — Assertion quality
 
-| Weak pattern | Replacement |
-|---|---|
-| `assertNotNull(result)` with no further checks | Assert the actual value or specific fields |
-| `assertTrue(result != null)` | `assertNotNull(result)` + value check |
-| `assertEquals(true, someCondition)` | `assertTrue(someCondition)` |
-| `assertEquals(false, someCondition)` | `assertFalse(someCondition)` |
-| Mock verified with `verify()` but return value never checked | Also assert the return value |
-| `assertThat(list).isNotEmpty()` with no content check | Assert size or specific elements |
-| Angular: `expect(component).toBeTruthy()` as the only assertion | Assert specific properties or output values |
-| `expect(result).toBeDefined()` with no further checks | Assert the actual value |
-| `expect(spy).toHaveBeenCalled()` with no argument check | Use `toHaveBeenCalledWith(...)` |
-| `expect(result).toEqual({})` (empty object) | Assert the specific fields expected |
-| Exception test only checks type (`assertThrows(FooException.class, ...)`) | Also assert the exception message or cause |
-
-**Java bonus:** if JUnit 5 is used, prefer `assertAll(...)` for grouping multiple field checks on the same object so all failures are shown at once.
+Check every assertion against the quality table in the reference file. Replace weak patterns with
+the stronger alternatives specified there.
 
 ### 6c — Test isolation
 
-- Static mutable fields mutated in one test and read in another → move initialisation to `@BeforeEach` / `beforeEach`
-- Tests that rely on execution order (pass only when run after another test) → make each test self-contained
-- Missing `@AfterEach` / `afterEach` cleanup for resources opened in the test body (files, streams, DB connections) → add teardown
-- Angular: `TestBed` not reset between tests when component has side-effectful `ngOnInit` → add `TestBed.resetTestingModule()` or restructure
+Apply the test isolation rules from the reference file.
 
 Rules:
-- Do NOT remove any test — only strengthen or split them.
-- Each assertion must be specific enough that if the business logic changed subtly, the test would fail.
+- Do NOT reduce the number of tests or remove test coverage. Splitting a test into multiple
+  focused tests is permitted.
+- Each assertion must be specific enough that if the business logic changed subtly, the test
+  would fail.
 
 ---
 
-## Step 7 — Final verification and report
+## Step 7 — Run final verification and report
 
-Run the full test suite with coverage one last time:
+Run the final verification commands from the reference file.
 
-**Java:**
-```
-mvn test jacoco:report
-```
-Then read coverage numbers:
-```
-python3 ~/.claude/skills/test-review/scripts/jacoco-coverage-summary.py
-```
-Use `INSTRUCTION` as "statements %" and `BRANCH` as "branches %" in the report below.
-
-**Angular:**
-```
-npx vitest run --coverage
-```
-
-Then report to the user using this format (output as rendered Markdown, not inside a code block):
+Report to the user using this format (output as rendered Markdown, not inside a code block):
 
 ---
 
-## Test Review Summary
+## Test review summary
 
 ### \<FileName\>
 - Tests before: \<N\>
@@ -234,4 +195,5 @@ Then report to the user using this format (output as rendered Markdown, not insi
 
 ---
 
-If any test is still failing after all fixes, list it explicitly and explain what manual intervention is needed.
+If any test is still failing after all fixes, list it explicitly and explain what manual
+intervention is needed.
