@@ -26,6 +26,8 @@ also adjust the JaCoCo report path accordingly
 
 ## Coverage commands
 
+> Use `python3` on Linux/macOS or `py` on Windows for the Python commands below.
+
 Generate coverage report:
 ```
 mvn test jacoco:report
@@ -33,7 +35,7 @@ mvn test jacoco:report
 
 Parse coverage for a specific class:
 ```
-python3 ~/.claude/skills/test-review/scripts/jacoco-coverage-by-class.py <ClassName>
+python3 scripts/jacoco-coverage-by-class.py <ClassName>
 ```
 Substitute `<ClassName>` with the simple class name (e.g., `OrderService`).
 
@@ -48,7 +50,7 @@ mvn test jacoco:report
 ```
 Then read coverage numbers:
 ```
-python3 ~/.claude/skills/test-review/scripts/jacoco-coverage-summary.py
+python3 scripts/jacoco-coverage-summary.py
 ```
 Use `INSTRUCTION` as "statements %" and `BRANCH` as "branches %" in the report.
 
