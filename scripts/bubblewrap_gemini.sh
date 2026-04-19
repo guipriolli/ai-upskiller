@@ -95,9 +95,6 @@ if [ -n "$GPG_SOCKDIR" ] && [ -d "$GPG_SOCKDIR" ]; then
   GPG_BINDS+=(--bind "$GPG_SOCKDIR" "$GPG_SOCKDIR")
 fi
 
-# Gemini CLI specific paths
-mkdir -p "$HOME/.gemini" "$HOME/.agents" "$HOME/.npm" "$HOME/.m2"
-
 bwrap \
   --ro-bind /usr /usr \
   --ro-bind /lib /lib \
