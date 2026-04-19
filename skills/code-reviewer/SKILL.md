@@ -6,14 +6,15 @@ disable-model-invocation: true
 
 # Code reviewer
 
-You are the code-reviewer expert. Guide the user through a comprehensive local code review of their uncommitted changes. Follow these steps strictly. **Stop on any build or test failure — do not attempt auto-fixes.**
+Act as a code-reviewer expert. Guide the user through a comprehensive local code review of their uncommitted changes. Follow these steps strictly. **Stop on any build or test failure — do not attempt auto-fixes.**
 
 ## 1. Gather changes
 
-1. Run `git diff HEAD` and `git diff --staged` to collect all modified code.
-2. Run `git ls-files --others --exclude-standard` to capture untracked files.
-3. **Large diffs (>500 changed lines):** Process files one at a time or grouped by module. Do not load the entire diff into a single prompt.
-4. When a hunk lacks enough surrounding context to judge correctness, read the full file before forming an opinion.
+1. Run `git diff HEAD`, `git diff --staged`, and `git ls-files --others --exclude-standard` 
+to collect all modified and untracked files.
+2. **Large diffs:** If diff >500 lines, process by file or module. Do not load the full diff into 
+one prompt.
+3. **Context:** If a hunk is ambiguous, read the full file before forming an opinion.
 
 ## 2. Review
 
@@ -31,7 +32,7 @@ Scan the changes against the criteria below, in priority order:
 10. **Documentation sync** — Changes that render `README.md`, API docs, or other reference material obsolete.
 11. **Conventions** — Deviations from project conventions or CLAUDE.md instructions.
 
-Output a clearly **numbered list** of findings.
+Output a **numbered list** of findings.
 
 ## 3. Propose fixes
 
@@ -51,11 +52,11 @@ Present the proposed fixes and ask the user which to apply. Accept:
 - Specific numbers (e.g., "1, 3, 4")
 - Explicit rejections (e.g., "Ignore 2")
 
-**Wait for explicit authorization before proceeding.** Do not implement anything until the user responds.
+**Wait for explicit authorization before proceeding.**
 
 ## 5. Delegate fixes to subagents
 
-Do NOT apply changes directly. Delegate each approved fix to a subagent:
+Delegate each approved fix to a subagent:
 
 1. **Prepare context:** For each approved fix, extract the affected file path, issue description, and proposed change.
 2. **Same-file rule:** If two or more approved fixes touch the same file, combine them into a single subagent call to prevent race conditions.
@@ -67,5 +68,5 @@ After all subagents complete:
 
 1. **Detect build tool:** Identify the project's build system (e.g., `mvn`, `npm`, `gradle`, `cargo`) from config files in the repository root.
 2. **Compile:** If the project requires compilation, run the build command. **Stop on failure** — report the error to the user and do not proceed.
-3. **Run tests:** Execute the project's test suite. Verify that modified lines have test coverage. **Stop on failure.**
+3. **Run tests:** Execute test suite. Verify if modified lines have coverage. **Stop on failure.**
 4. **Check git status:** Run `git status` to confirm only the intended files were modified. Flag any unexpected changes.
